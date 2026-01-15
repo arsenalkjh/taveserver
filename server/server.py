@@ -33,7 +33,7 @@ async def load_models():
     # Load PaddleOCR
     print("Loading PaddleOCR...")
     from paddleocr import PaddleOCR
-    models["ocr_model"] = PaddleOCR(use_angle_cls=True, lang='korean', use_gpu=True)
+    models["ocr_model"] = PaddleOCR(use_angle_cls=True, lang='korean', device="gpu")
     
     # Load LLM for post-processing
     print("Loading Qwen3 LLM...")
