@@ -12,5 +12,5 @@ fastapi
 uvicorn
 python-multipart
 
-paddlepaddle-gpu
+paddlepaddle-gpu==3.2.2 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 paddleocr
