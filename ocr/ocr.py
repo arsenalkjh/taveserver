@@ -1,77 +1,119 @@
-import torch
+from paddleocr import PaddleOCR
 import numpy as np
 import cv2
-
 from PIL import Image
-import re
+from pathlib import Path
 
-def pil_to_cv2(pil_img):
-    return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-
-def run_varco_ocr(
+def run_paddle_ocr(
     image_path,
-    model,
-    processor,
+    ocr_model=None,
     angle_list=[0, 90, 180, 270]
 ):
+    """
+    Run PaddleOCR on an image with multiple rotation angles.
+    
+    Args:
+        image_path: Path to the image file
+        ocr_model: PaddleOCR instance (if None, will create a new one)
+        angle_list: List of rotation angles to try
+    
+    Returns:
+        List of detected text strings
+    """
+    # Initialize PaddleOCR if not provided
+    if ocr_model is None:
+        ocr_model = PaddleOCR(use_angle_cls=True, lang='korean', use_gpu=True)
+    
     char_list = []
-
-    # 1️⃣ PIL → cv2
+    
+    # Load image
     image_pil = Image.open(image_path).convert("RGB")
-    image = pil_to_cv2(image_pil)
-
-    # 2️⃣ 크기 계산 (cv2 기준)
+    image = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+    
+    # Resize if needed
     h, w = image.shape[:2]
     target_size = 2304
-
+    
     if max(w, h) < target_size:
         scaling_factor = target_size / max(w, h)
         new_w = int(w * scaling_factor)
         new_h = int(h * scaling_factor)
         image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-
-    # 3️⃣ 각도별 OCR
+    
+    # Run OCR on different angles
     for angle in angle_list:
         target = image if angle == 0 else rotate_image(image, angle)
-
-        # 🔁 cv2 → PIL (모델 입력용)
-        target_pil = Image.fromarray(cv2.cvtColor(target, cv2.COLOR_BGR2RGB))
-
-        conversation = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image", "image": target_pil},
-                    {"type": "text", "text": "<ocr>"},
-                ],
-            },
-        ]
-
-        inputs = processor.apply_chat_template(
-            conversation,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(model.device)
-
-        generate_ids = model.generate(**inputs, max_new_tokens=1024)
-
-        generate_ids_trimmed = [
-            out_ids[len(in_ids):]
-            for in_ids, out_ids in zip(inputs.input_ids, generate_ids)
-        ]
-
-        output = processor.decode(
-            generate_ids_trimmed[0],
-            skip_special_tokens=False
-        )
-
-        char_list.extend(re.findall(r"<char>(.*?)</char>", output))
-
+        
+        # PaddleOCR expects numpy array in BGR format
+        result = ocr_model.ocr(target, cls=True)
+        
+        # Extract text from results
+        if result and result[0]:
+            for line in result[0]:
+                if line and len(line) >= 2:
+                    text = line[1][0]  # line[1] is (text, confidence)
+                    if text and len(text.strip()) > 0:
+                        char_list.append(text.strip())
+    
     return char_list
 
 
+def rotate_image(image_bgr: np.ndarray, angle: float) -> np.ndarray:
+    """Rotate while keeping the full canvas."""
+    h, w = image_bgr.shape[:2]
+    center = (w / 2, h / 2)
+    rad = np.deg2rad(angle)
+    new_w = int(abs(h * np.sin(rad)) + abs(w * np.cos(rad)))
+    new_h = int(abs(h * np.cos(rad)) + abs(w * np.sin(rad)))
+    m = cv2.getRotationMatrix2D(center, angle, 1.0)
+    m[0, 2] += new_w / 2 - center[0]
+    m[1, 2] += new_h / 2 - center[1]
+    return cv2.warpAffine(
+        image_bgr,
+        m,
+        (new_w, new_h),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(0, 0, 0),
+    )
+
+
+
+    """
+modules.ocr.ocr_inference의 Docstring
+# 사진 → OCR → 텍스트
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Dict, Iterable, List, Sequence, Set, Tuple
+
+import cv2
+import numpy as np
+from PIL import Image
+from paddleocr import PaddleOCR
+
+
+def run_ocr_with_rotations(
+    ocr: PaddleOCR,
+    image_path: Path,
+    rotations: Iterable[int] = (0, 90, 180, 270),
+) -> List[str]:
+    img = cv2.imread(str(image_path))
+    if img is None:
+        raise FileNotFoundError(f"Could not read image: {image_path}")
+
+    texts: List[str] = []
+    for angle in rotations:
+        target = img if angle == 0 else rotate_image(img, angle)
+        results = ocr.predict(target)
+        if not results:
+            continue
+        rec_texts = results[0].get("rec_texts")
+        if rec_texts:
+            texts.extend(rec_texts)
+    return texts
 
 def rotate_image(image_bgr: np.ndarray, angle: float) -> np.ndarray:
     """Rotate while keeping the full canvas."""

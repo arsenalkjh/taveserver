@@ -3,7 +3,7 @@ import torch
 
 from ocr.detect_ingredients import run_sam
 from ocr.vlm_postprocessing import vlm_postprocessing
-from ocr.ocr import run_varco_ocr
+from ocr.ocr import run_paddle_ocr
 from ocr.ocr_postprocessing import ocr_postprocessing
 
 
@@ -13,7 +13,6 @@ def run_total_pipeline(
     vlm_model,
     vlm_processor,
     ocr_model,
-    ocr_processor,
     llm_model,
     llm_tokenizer
 ):
@@ -46,8 +45,8 @@ def run_total_pipeline(
             print(f"  Error processing crop {i}: {e}")
 
     # 2. OCR & LLM (Text detection)
-    print("Running OCR (Text Detection)...")
-    ocr_texts = run_varco_ocr(image_path, ocr_model, ocr_processor)
+    print("Running OCR (Text Detection with PaddleOCR)...")
+    ocr_texts = run_paddle_ocr(image_path, ocr_model)
     print(f"  OCR extracted {len(ocr_texts)} text fragments.")
     
     print("Running OCR Post-processing (LLM)...")

@@ -30,11 +30,10 @@ async def load_models():
     print("Loading Qwen VL...")
     models["vlm_model"], models["vlm_processor"] = load_qwen_vl()
     
-    # Load OCR model (assuming it's the same as VLM for now)
-    # If you have a separate OCR model, load it here
-    print("Loading OCR model (using Qwen VL)...")
-    models["ocr_model"] = models["vlm_model"]
-    models["ocr_processor"] = models["vlm_processor"]
+    # Load PaddleOCR
+    print("Loading PaddleOCR...")
+    from paddleocr import PaddleOCR
+    models["ocr_model"] = PaddleOCR(use_angle_cls=True, lang='korean', use_gpu=True)
     
     # Load LLM for post-processing
     print("Loading Qwen3 LLM...")
@@ -71,7 +70,6 @@ async def detect_ingredients(file: UploadFile = File(...)):
             vlm_model=models["vlm_model"],
             vlm_processor=models["vlm_processor"],
             ocr_model=models["ocr_model"],
-            ocr_processor=models["ocr_processor"],
             llm_model=models["llm_model"],
             llm_tokenizer=models["llm_tokenizer"]
         )
