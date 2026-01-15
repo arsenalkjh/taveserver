@@ -1,0 +1,13 @@
+ultralytics
+opencv-python
+Pillow
+numpy
+accelerate
+
+torch
+transformers
+sentence-transformers
+
+fastapi
+uvicorn
+python-multipart
