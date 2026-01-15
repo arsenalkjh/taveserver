@@ -22,7 +22,8 @@ def run_paddle_ocr(
     """
     # Initialize PaddleOCR if not provided
     if ocr_model is None:
-        ocr_model = PaddleOCR(use_angle_cls=True, lang='korean', use_gpu=True)
+        # Use CPU to avoid CUDA conflicts with PyTorch
+        ocr_model = PaddleOCR(use_angle_cls=True, lang='korean', use_gpu=False)
     
     char_list = []
     
@@ -76,6 +77,3 @@ def rotate_image(image_bgr: np.ndarray, angle: float) -> np.ndarray:
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(0, 0, 0),
     )
-
-
-

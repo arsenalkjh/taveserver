@@ -12,5 +12,5 @@ fastapi
 uvicorn
 python-multipart
 
-paddlepaddle-gpu==3.2.2 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
-paddleocr
+# PaddleOCR will install compatible paddlepaddle version automatically
+paddleocr>=2.7.0
