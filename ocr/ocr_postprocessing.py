@@ -1,5 +1,6 @@
 import json
 import re
+import ast
 from pathlib import Path
 
 def ocr_postprocessing(
@@ -12,66 +13,66 @@ def ocr_postprocessing(
     with open(prompt_path, "r", encoding="utf-8") as f:
         base_prompt = f.read()
 
-    cleaned_ingredients = []
+    print(f"Starting OCR Post-processing for {len(item_list)} items with Qwen3-VL (batch mode)...")
 
-    print(f"Starting OCR Post-processing for {len(item_list)} items with Qwen3-VL...")
-
-    for item in item_list:
-        if not item or len(item.strip()) < 2:  # Skip empty or very short strings
-            continue
-            
-        # Format prompt
-        prompt = base_prompt.replace("{item}", item)
-        
-        messages = [
-            {"role": "user", "content": prompt}
-        ]
-        
-        # Use processor for VL model - need to use tokenizer for text-only
-        text = processor.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-        
-        # Tokenize using processor's tokenizer
-        model_inputs = processor.tokenizer([text], return_tensors="pt").to(model.device)
-
-        generated_ids = model.generate(
-            **model_inputs,
-            max_new_tokens=512,
-        )
-        
-        # Extract new tokens and decode
-        output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
-        generated_text = processor.tokenizer.decode(output_ids, skip_special_tokens=True).strip()
-        
-        # Parse JSON output
-        try:
-            # Try to find JSON block if model chatters
-            json_match = re.search(r'\{.*\}', generated_text, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
-                result = json.loads(json_str)
-                
-                is_food = result.get("is_food")
-                name = result.get("name")
-                
-                if is_food and name:
-                    cleaned_ingredients.append(name)
-                    print(f"Processed: {item} -> Valid: {name}")
-                else:
-                    print(f"Processed: {item} -> Noise (filtered out)")
-                
-            else:
-                print(f"Failed to parse JSON for item: {item}. Output: {generated_text}")
-                
-        except json.JSONDecodeError:
-            print(f"JSON Decode Error for item: {item}. Output: {generated_text}")
-        except Exception as e:
-            print(f"Error processing item {item}: {e}")
-
-    # Remove duplicates while preserving order
-    final_list = list(dict.fromkeys(cleaned_ingredients))
+    # Skip if empty list
+    if not item_list or len(item_list) == 0:
+        return []
     
-    return final_list
+    # Format the OCR list as a string
+    ocr_list_str = "\n".join([f"- {item}" for item in item_list if item and item.strip()])
+    
+    # Format prompt with entire list
+    prompt = base_prompt.replace("{ocr_list}", ocr_list_str)
+    
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+    
+    # Use processor for VL model - need to use tokenizer for text-only
+    text = processor.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    
+    # Tokenize using processor's tokenizer
+    model_inputs = processor.tokenizer([text], return_tensors="pt").to(model.device)
+
+    generated_ids = model.generate(
+        **model_inputs,
+        max_new_tokens=1024,  # Increased for longer list
+    )
+    
+    # Extract new tokens and decode
+    output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
+    generated_text = processor.tokenizer.decode(output_ids, skip_special_tokens=True).strip()
+    
+    print(f"Model output: {generated_text}")
+    
+    # Parse Python list output
+    try:
+        # Try to find list in output
+        list_match = re.search(r'\[.*?\]', generated_text, re.DOTALL)
+        if list_match:
+            list_str = list_match.group(0)
+            # Safely evaluate the list
+            import ast
+            cleaned_ingredients = ast.literal_eval(list_str)
+            
+            # Ensure it's a list of strings
+            if isinstance(cleaned_ingredients, list):
+                cleaned_ingredients = [str(item) for item in cleaned_ingredients if item]
+                print(f"Extracted {len(cleaned_ingredients)} valid ingredients: {cleaned_ingredients}")
+                return cleaned_ingredients
+            else:
+                print(f"Output is not a list: {cleaned_ingredients}")
+                return []
+        else:
+            print(f"Failed to find list in output: {generated_text}")
+            return []
+            
+    except Exception as e:
+        print(f"Error parsing output: {e}. Output: {generated_text}")
+        return []
+
