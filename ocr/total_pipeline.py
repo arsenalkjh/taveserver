@@ -48,7 +48,7 @@ def run_total_pipeline(
 
     # Translate VLM results if any (Translate English to Korean one-by-one)
     if vlm_ingredients:
-        vlm_ingredients = translate_ingredients(vlm_ingredients, llm_model, llm_processor)
+        vlm_ingredients = translate_ingredients(vlm_ingredients)
         print(f"  Translated VLM results: {vlm_ingredients}")
       
 
