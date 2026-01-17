@@ -27,14 +27,15 @@ def ocr_postprocessing(
             {"role": "user", "content": prompt}
         ]
         
-        # Use processor for VL model
+        # Use processor for VL model - need to use tokenizer for text-only
         text = processor.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
         
-        model_inputs = processor([text], return_tensors="pt").to(model.device)
+        # Tokenize using processor's tokenizer
+        model_inputs = processor.tokenizer([text], return_tensors="pt").to(model.device)
 
         generated_ids = model.generate(
             **model_inputs,
@@ -43,7 +44,7 @@ def ocr_postprocessing(
         
         # Extract new tokens and decode
         output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
-        generated_text = processor.decode(output_ids, skip_special_tokens=True).strip()
+        generated_text = processor.tokenizer.decode(output_ids, skip_special_tokens=True).strip()
         
         # Parse JSON output
         try:

@@ -55,9 +55,33 @@ def load_varco_ocr():
     
     return model, processor
 
+def load_varco_ocr():
+    from transformers import LlavaOnevisionForConditionalGeneration
+    
+    model_name = "NCSOFT/VARCO-VISION-2.0-1.7B-OCR"
+    
+    # 4-bit quantization for VARCO OCR
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4"
+    )
+    
+    model = LlavaOnevisionForConditionalGeneration.from_pretrained(
+        model_name,
+        quantization_config=quantization_config,
+        device_map="auto",
+        torch_dtype=torch.float16
+    )
+    
+    processor = AutoProcessor.from_pretrained(model_name)
+    
+    return model, processor
+
 def load_sam3():
     overrides = dict(
-    conf=0.90,
+    conf=0.80,
     task="segment",
     mode="predict",
     model=str(WEIGHTS_DIR),
