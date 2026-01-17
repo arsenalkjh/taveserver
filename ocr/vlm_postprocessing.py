@@ -11,7 +11,7 @@ def vlm_postprocessing(
                 "type": "image",
                 "image": image,
             },
-            {"type": "text", "text": "What is this vegetable in the center. Answer one word only in **Korean**."},
+            {"type": "text", "text": "What is this vegetable in the center. Answer one word."},
         ],
     }
 ]
