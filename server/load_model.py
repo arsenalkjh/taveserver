@@ -81,7 +81,7 @@ def load_varco_ocr():
 
 def load_sam3():
     overrides = dict(
-    conf=0.70,
+    conf=0.75,
     task="segment",
     mode="predict",
     model=str(WEIGHTS_DIR),
