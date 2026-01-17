@@ -5,6 +5,7 @@ from ocr.detect_ingredients import run_sam
 from ocr.vlm_postprocessing import vlm_postprocessing
 from ocr.ocr import run_varco_ocr
 from ocr.ocr_postprocessing import ocr_postprocessing
+from ocr.translate import translate_ingredients
 
 
 def run_total_pipeline(
@@ -44,6 +45,12 @@ def run_total_pipeline(
                 vlm_ingredients.append(name)
         except Exception as e:
             print(f"  Error processing crop {i}: {e}")
+
+    # Translate VLM results if any (Translate English to Korean one-by-one)
+    if vlm_ingredients:
+        vlm_ingredients = translate_ingredients(vlm_ingredients, llm_model, llm_processor)
+        print(f"  Translated VLM results: {vlm_ingredients}")
+      
 
     # 2. OCR & LLM (Text detection)
     print("Running OCR (Text Detection with VARCO OCR)...")
