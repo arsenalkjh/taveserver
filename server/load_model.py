@@ -6,15 +6,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 WEIGHTS_DIR = BASE_DIR / "weights" / "sam3.pt"
 
 def load_qwen3():
-    model_name = "Qwen/Qwen3-8B"
+    # Using VL model for text processing to save memory (2B instead of 8B)
+    model_name = "Qwen/Qwen3-VL-2B-Instruct"
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(
+    processor = AutoProcessor.from_pretrained(model_name)
+    model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_name,
         torch_dtype="auto",
         device_map="auto"
     )
-    return model, tokenizer
+    return model, processor
 
 def load_varco_ocr():
     from transformers import LlavaOnevisionForConditionalGeneration

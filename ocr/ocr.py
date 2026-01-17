@@ -11,7 +11,7 @@ def run_varco_ocr(
     image_path,
     model,
     processor,
-    angle_list=[0, 90, 180, 270]
+    angle_list=[0]
 ):
     """
     Run VARCO OCR on an image with multiple rotation angles.

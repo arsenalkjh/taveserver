@@ -34,9 +34,9 @@ async def load_models():
     print("Loading VARCO OCR...")
     models["ocr_model"], models["ocr_processor"] = load_varco_ocr()
     
-    # Load LLM for post-processing
+    # Load LLM for post-processing (using Qwen3-VL-2B to save memory)
     print("Loading Qwen3 LLM...")
-    models["llm_model"], models["llm_tokenizer"] = load_qwen3()
+    models["llm_model"], models["llm_processor"] = load_qwen3()
     
     print("All models loaded successfully!")
 
@@ -71,7 +71,7 @@ async def detect_ingredients(file: UploadFile = File(...)):
             ocr_model=models["ocr_model"],
             ocr_processor=models["ocr_processor"],
             llm_model=models["llm_model"],
-            llm_tokenizer=models["llm_tokenizer"]
+            llm_processor=models["llm_processor"]
         )
         
         # Clean up temp file

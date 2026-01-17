@@ -5,7 +5,7 @@ from pathlib import Path
 def ocr_postprocessing(
         item_list,
         model,
-        tokenizer
+        processor
 ):
     # Prompt loading
     prompt_path = Path(__file__).parent.parent / "prompts" / "ocr_postprocessing.txt"
@@ -14,7 +14,7 @@ def ocr_postprocessing(
 
     cleaned_ingredients = []
 
-    print(f"Starting OCR Post-processing for {len(item_list)} items with Qwen3...")
+    print(f"Starting OCR Post-processing for {len(item_list)} items with Qwen3-VL...")
 
     for item in item_list:
         if not item or len(item.strip()) < 2:  # Skip empty or very short strings
@@ -27,25 +27,23 @@ def ocr_postprocessing(
             {"role": "user", "content": prompt}
         ]
         
-        # Qwen3 Logic: tokenize=False, then tokenize
-        text = tokenizer.apply_chat_template(
+        # Use processor for VL model
+        text = processor.apply_chat_template(
             messages,
             tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=False # Switches between thinking and non-thinking modes.
+            add_generation_prompt=True
         )
         
-        model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+        model_inputs = processor([text], return_tensors="pt").to(model.device)
 
         generated_ids = model.generate(
             **model_inputs,
-            max_new_tokens=512, # Adjusted length
-            # do_sample=False, # Qwen example didn't specify do_sample, usually safe to keep defaults or false for deterministic
+            max_new_tokens=512,
         )
         
         # Extract new tokens and decode
         output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
-        generated_text = tokenizer.decode(output_ids, skip_special_tokens=True).strip()
+        generated_text = processor.decode(output_ids, skip_special_tokens=True).strip()
         
         # Parse JSON output
         try:

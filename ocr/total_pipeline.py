@@ -15,7 +15,7 @@ def run_total_pipeline(
     ocr_model,
     ocr_processor,
     llm_model,
-    llm_tokenizer
+    llm_processor
 ):
     """
     Runs the full ingredient detection pipeline:
@@ -51,7 +51,7 @@ def run_total_pipeline(
     print(f"  OCR extracted {len(ocr_texts)} text fragments.")
     
     print("Running OCR Post-processing (LLM)...")
-    ocr_ingredients = ocr_postprocessing(ocr_texts, llm_model, llm_tokenizer)
+    ocr_ingredients = ocr_postprocessing(ocr_texts, llm_model, llm_processor)
     print(f"  OCR identified {len(ocr_ingredients)} ingredients: {ocr_ingredients}")
 
     # 3. Combine Results
