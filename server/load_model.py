@@ -16,6 +16,22 @@ def load_qwen3():
     )
     return model, tokenizer
 
+def load_varco_ocr():
+    from transformers import LlavaOnevisionForConditionalGeneration
+    
+    model_name = "NCSOFT/VARCO-VISION-2.0-1.7B-OCR"
+    
+    model = LlavaOnevisionForConditionalGeneration.from_pretrained(
+        model_name,
+        torch_dtype="auto",
+        attn_implementation="sdpa",
+        device_map="auto"
+    )
+    
+    processor = AutoProcessor.from_pretrained(model_name)
+    
+    return model, processor
+
 def load_qwen_vl():
     model = Qwen3VLForConditionalGeneration.from_pretrained(
     "Qwen/Qwen3-VL-2B-Instruct", dtype="auto", device_map="auto"
@@ -26,12 +42,12 @@ def load_qwen_vl():
 
 def load_sam3():
     overrides = dict(
-    conf=0.25,
+    conf=0.90,
     task="segment",
     mode="predict",
     model=str(WEIGHTS_DIR),
     half=True,  # Use FP16 for faster inference
-    save=True,
+    save=False,
     )
     SAM_MODEL = SAM3SemanticPredictor(overrides=overrides)
     return SAM_MODEL

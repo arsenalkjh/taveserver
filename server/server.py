@@ -9,7 +9,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
-from server.load_model import load_qwen3, load_qwen_vl, load_sam3
+from server.load_model import load_qwen3, load_qwen_vl, load_sam3, load_varco_ocr
 from ocr.total_pipeline import run_total_pipeline
 
 app = FastAPI(title="Ingredient Detection API")
@@ -30,11 +30,9 @@ async def load_models():
     print("Loading Qwen VL...")
     models["vlm_model"], models["vlm_processor"] = load_qwen_vl()
     
-    # Load PaddleOCR
-    print("Loading PaddleOCR...")
-    from paddleocr import PaddleOCR
-    # Use CPU to avoid CUDA library conflicts with PyTorch
-    models["ocr_model"] = PaddleOCR(use_angle_cls=True, lang='korean', use_gpu=False)
+    # Load VARCO OCR
+    print("Loading VARCO OCR...")
+    models["ocr_model"], models["ocr_processor"] = load_varco_ocr()
     
     # Load LLM for post-processing
     print("Loading Qwen3 LLM...")
@@ -71,6 +69,7 @@ async def detect_ingredients(file: UploadFile = File(...)):
             vlm_model=models["vlm_model"],
             vlm_processor=models["vlm_processor"],
             ocr_model=models["ocr_model"],
+            ocr_processor=models["ocr_processor"],
             llm_model=models["llm_model"],
             llm_tokenizer=models["llm_tokenizer"]
         )
