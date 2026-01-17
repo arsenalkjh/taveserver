@@ -7,19 +7,19 @@ from transformers import AutoProcessor, LlavaOnevisionForConditionalGeneration
 import re
 
 
-def run_qwen_ocr(
+def run_varco_ocr(
     image_path,
     model,
     processor,
     angle_list=[0]
 ):
     """
-    Run Qwen3-VL OCR on an image with multiple rotation angles.
+    Run VARCO OCR on an image with multiple rotation angles.
     
     Args:
         image_path: Path to the image file
-        model: Qwen3-VL model
-        processor: Qwen3-VL processor
+        model: VARCO OCR model
+        processor: VARCO OCR processor
         angle_list: List of rotation angles to try
     
     Returns:
@@ -55,7 +55,7 @@ def run_qwen_ocr(
                 "role": "user",
                 "content": [
                     {"type": "image", "image": target_pil},
-                    {"type": "text", "text": "Extract all text from this image. Return only the text you see."},
+                    {"type": "text", "text": "<ocr>"},
                 ],
             },
         ]
@@ -66,7 +66,7 @@ def run_qwen_ocr(
             tokenize=True,
             return_dict=True,
             return_tensors="pt"
-        ).to(model.device)
+        ).to(model.device, torch.float16)
         
         generate_ids = model.generate(**inputs, max_new_tokens=1024)
         
@@ -74,15 +74,10 @@ def run_qwen_ocr(
             out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generate_ids)
         ]
         
-        output = processor.decode(generate_ids_trimmed[0], skip_special_tokens=True)
+        output = processor.decode(generate_ids_trimmed[0], skip_special_tokens=False)
         
-        # Split output into individual text items
-        if output and output.strip():
-            # Split by common separators and filter empty strings
-            texts = [t.strip() for t in re.split(r'[,\n]', output) if t.strip()]
-            char_list.extend(texts)
-    
-    return char_list
+        # Extract text from <char> tags
+        char_list.extend(re.findall(r"<char>(.*?)</char>", output))
     
     return char_list
 

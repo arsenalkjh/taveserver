@@ -9,7 +9,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
-from server.load_model import load_qwen3_vl_quantized, load_sam3
+from server.load_model import load_qwen3_vl_quantized, load_sam3, load_varco_ocr
 from ocr.total_pipeline import run_total_pipeline
 
 app = FastAPI(title="Ingredient Detection API")
@@ -26,17 +26,19 @@ async def load_models():
     print("Loading SAM3...")
     models["sam"] = load_sam3()
     
-    # Load quantized Qwen3-VL-8B (shared for VLM, OCR, and LLM)
+    # Load quantized Qwen3-VL-8B (shared for VLM and LLM)
     print("Loading Qwen3-VL-8B (4-bit quantized)...")
     shared_model, shared_processor = load_qwen3_vl_quantized()
     
-    # Use same model for VLM, OCR, and LLM tasks to save memory
+    # Use same model for VLM and LLM tasks
     models["vlm_model"] = shared_model
     models["vlm_processor"] = shared_processor
-    models["ocr_model"] = shared_model
-    models["ocr_processor"] = shared_processor
     models["llm_model"] = shared_model
     models["llm_processor"] = shared_processor
+    
+    # Load VARCO OCR (separate specialized model)
+    print("Loading VARCO OCR (4-bit quantized)...")
+    models["ocr_model"], models["ocr_processor"] = load_varco_ocr()
     
     print("All models loaded successfully!")
 
