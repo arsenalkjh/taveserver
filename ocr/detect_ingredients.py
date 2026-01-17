@@ -15,7 +15,7 @@ def load_image(image_path: Path) -> Image.Image:
     return Image.open(image_path).convert("RGB")
 
 def run_sam(image_path: Path, model):
-    prompts = ["vegetable","mushroom","fruit"]
+    prompts = ["vegetable","mushroom",]
     model.set_image(str(image_path))
     results = model(text=prompts)
     boxes_tensor = boxes_from_results(results=results)
