@@ -48,7 +48,7 @@ def run_total_pipeline(
     # 2. OCR & LLM (Text detection)
     print("Running OCR (Text Detection with VARCO OCR)...")
     ocr_texts = run_varco_ocr(image_path, ocr_model, ocr_processor)
-    print(f"  OCR extracted {len(ocr_texts)} text fragments.")
+    print(f"  OCR extracted {(ocr_texts)} text fragments.")
     
     print("Running OCR Post-processing (LLM)...")
     ocr_ingredients = ocr_postprocessing(ocr_texts, llm_model, llm_processor)
